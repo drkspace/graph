@@ -42,15 +42,12 @@ class graph():
     All of the variables do nothing yet
     """
     def graph(self, xMin = 0, xMax = 0, yMin = 0, yMax = 0, addBestFit = False):
-        x = np.linspace(0, np.max(self.data[:,0]), 100)
+        
         plot.suptitle(self.title)
         plot.plot(self.data[:,0],self.data[:,1])
         plot.xlabel(self.xAxisName)
         plot.ylabel(self.yAxisName)
-       
-
-        #plot.legend()
-        plot.show()
+        
 
     def calculateStdDev(self, columnNumber=0):
         mean = self.calculateMean(columnNumber)
@@ -89,33 +86,47 @@ class graph():
     """
     Type codes:
         l = linear best fit
-        s = sinusodal best fit
-        sr = rising sinusodal best fit
-        p[number] = polynomial with degree number (i.e. p2 tries a polynomial with degree 2)
-        None = try all and see which one has the best r^2 value
+        s = sinusoidal best fit
+        sr = rising sinusoidal best fit
+        p[number] = polynomial with degree number (i.e. p2 tries a polynomial with degree 2) (NOT IMPLEMENTED YET)
+        c = custom best fit equation (guess is a list of a guess of what the constants and coefficients are, but it doesn't really matter what you put)
+        None = try all and see which one has the best r^2 value (NOT IMPLEMENTED YET)
     """
-    def lineOfBestFit(self, type):
+    def lineOfBestFit(self, type, equation=None, guess = None):
 
+        xColumnNumber = 1
         x = np.linspace(0, np.max(self.data[:,0]), 1000)
         bestFit = bestFitLines(self.data)
-        rSquared = -1
         equationInfo = []
         if type is "l":
             equationInfo = bestFit.linearLOBF()
             lineModifiers = equationInfo[0]
             plot.plot(x, lineModifiers[0]*x+lineModifiers[1])
         elif type is "s":
-        elif type is "sr":
-            equationInfo = bestFit.risingSinusodialLOBF(1)
-            rSquared = equationInfo[1]
+            equationInfo = bestFit.SinusodialLOBF(xColumnNumber)
             lineModifiers = equationInfo[0]
-
+            plot.plot(x, lineModifiers[0]*np.sin(lineModifiers[1]*x+lineModifiers[2])+lineModifiers[3])
+        elif type is "sr":
+            equationInfo = bestFit.risingSinusodialLOBF(xColumnNumber)
+            lineModifiers = equationInfo[0]
             plot.plot(x, lineModifiers[0]*np.sin(lineModifiers[1]*x+lineModifiers[2])+lineModifiers[3]+lineModifiers[4]*x)
         elif type[0] is "p":
+            pass
+        elif type is "c":
+            if equation is None or guess is None:
+                print("Please make sure that you have given an equation and a guess")
+            else:
+                #print(guess
+                equationInfo = bestFit.customLOBF(xColumnNumber, equation, guess)
+                lineModifiers = equationInfo[0]
+                
+                plot.plot(x, equation(lineModifiers, x), label="LOBF")
         elif type is None:
+            pass
         else:
-
+            pass
         
+        return equationInfo
 
     def setXAxisName(self, xAxisName):
         self.xAxisName = xAxisName
@@ -125,3 +136,7 @@ class graph():
 
 a = graph(file="testData.csv")
 a.graph()
+equation = lambda modifiers, x: modifiers[0]*x**2 + modifiers[1]*x + modifiers[2]
+
+print(a.lineOfBestFit(("c"),  equation, [10,23,125]))
+plot.show()

@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.optimize import leastsq
+from scipy.optimize import leastsq, least_squares
 
 class bestFitLines():
 
@@ -45,9 +45,18 @@ class bestFitLines():
         rSquared = self.rSquared(column, equation, modifiers)
         print(modifiers)
         return modifiers, rSquared
+
+    def customLOBF(self, columnNumber, equation, guess):
+        
+        maxInDataSet = np.max(self.data[:,0])
+        t = np.linspace(0, maxInDataSet, self.data.shape[0])
+        modifiers = self.LOBF(columnNumber, equation, guess, t)[0]
+        rSquared = self.rSquared(self.data[:,columnNumber], equation, modifiers)
+        return modifiers, rSquared
         
     def LOBF(self, columnNumber, equation, guess, equationPoints):
-        delta = lambda modifiers: equation(modifiers, equationPoints)-self.data[:,columnNumber]
+        
+        delta = lambda modifiers: equation(modifiers, equationPoints) - self.data[:,columnNumber]
         return leastsq(delta, guess)
 
     def calculateMean(self, columnNumber, data=None):
@@ -65,7 +74,8 @@ class bestFitLines():
         return sum/(self.data.shape[0])
 
     def rSquared(self, data, equation, modifiers):
-        t = np.linspace(0, 20, data.shape[0])
+
+        t = np.linspace(0, np.max(self.data[:,0]), data.shape[0])
         equData = equation(modifiers, t)
         average = self.calculateMean(0,data)
         SSR = 0
@@ -73,6 +83,5 @@ class bestFitLines():
         for index in range(data.shape[0]):
             SSR += (equData[index]-average)**2
             SSTO += (data[index]-average)**2
-
         return SSR/SSTO        
     
